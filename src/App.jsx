@@ -6,7 +6,9 @@ import AdminView from "./pages/AdminView";
 import SuperAdmin from "./pages/SuperAdmin";
 
 function RoleRoute({ children, allowed }) {
-  const { currentUser, role } = useAuth();
+  const { currentUser, role, loading } = useAuth();
+
+  if (loading) return null;
   if (!currentUser) return <Navigate to="/login" />;
   if (!allowed.includes(role)) return <Navigate to="/dashboard" />;
   return children;
