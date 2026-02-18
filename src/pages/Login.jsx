@@ -1,34 +1,38 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 
 export default function Login() {
-  const { login, currentUser, role } = useAuth();
+  const { login, currentUser, role, loading } = useAuth();
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [loggingIn, setLoggingIn] = useState(false);
 
-  if (currentUser) {
-    if (role === "superadmin") navigate("/superadmin");
-    else if (role === "admin") navigate("/admin");
-    else navigate("/dashboard");
-  }
+  // Redirect once Firebase restores session and role is known
+  useEffect(() => {
+    if (!loading && currentUser && role) {
+      if (role === "superadmin") navigate("/superadmin");
+      else if (role === "admin") navigate("/admin");
+      else navigate("/dashboard");
+    }
+  }, [loading, currentUser, role]);
+
+  // Show nothing while Firebase is restoring session
+  if (loading) return null;
 
   async function handleLogin(e) {
     e.preventDefault();
     setError("");
-    setLoading(true);
+    setLoggingIn(true);
     try {
       await login(email, password);
-      if (role === "superadmin") navigate("/superadmin");
-      else if (role === "admin") navigate("/admin");
-      else navigate("/dashboard");
+      // Navigation handled by useEffect above once role loads
     } catch (err) {
       setError("Invalid email or password");
+      setLoggingIn(false);
     }
-    setLoading(false);
   }
 
   return (
@@ -54,8 +58,8 @@ export default function Login() {
             onChange={(e) => setPassword(e.target.value)}
             required
           />
-          <button style={styles.button} type="submit" disabled={loading}>
-            {loading ? "Signing in..." : "Sign In"}
+          <button style={styles.button} type="submit" disabled={loggingIn}>
+            {loggingIn ? "Signing in..." : "Sign In"}
           </button>
         </form>
       </div>
